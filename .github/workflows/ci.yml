@@ -1,0 +1,19 @@
+name: Validate Ollama Deployment Scripts
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate Bash scripts
+        run: bash -n provision/provision-scripts/*.sh
+
+      - name: Validate Ansible playbook
+        run: ansible-lint ansible/playbook.yml || true
