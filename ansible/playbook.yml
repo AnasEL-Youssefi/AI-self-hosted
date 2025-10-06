@@ -1,0 +1,40 @@
+---
+- name: Deploy Ollama LLM Server
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update and install dependencies
+      apt:
+        update_cache: yes
+        name: ["curl", "ufw", "socat"]
+        state: present
+
+    - name: Install Ollama
+      shell: curl -fsSL https://ollama.com/install.sh | sh
+
+    - name: Open ports
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+      loop:
+        - 11434
+        - 11435
+        - 22
+
+    - name: Setup Socat service
+      copy:
+        dest: /etc/systemd/system/socat-ollama.service
+        content: |
+          [Unit]
+          Description=Socat proxy to expose Ollama on 0.0.0.0
+          [Service]
+          ExecStart=/usr/bin/socat TCP-LISTEN:11435,reuseaddr,fork TCP:127.0.0.1:11434
+          Restart=always
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Start Socat service
+      systemd:
+        name: socat-ollama
+        state: started
+        enabled: yes
